@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import datetime
@@ -43,7 +44,10 @@ col_txt, col_combo = st.columns([2, 2])
 with col_txt:
     nombre_archivo_filtro = st.text_input("🔍 Buscar por nombre de archivo (parcial):")
 with col_combo:
-    lista_archivos = sorted(df["Nombre Archivo"].dropna().unique())
+    if "Nombre Archivo" in df.columns:
+        lista_archivos = sorted(df["Nombre Archivo"].dropna().unique())
+    else:
+        lista_archivos = []
     archivo_seleccionado = st.selectbox("📁 Elegí un archivo puntual:", ["Todos"] + lista_archivos)
 
 # Filtro por fechas
