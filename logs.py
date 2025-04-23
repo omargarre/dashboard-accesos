@@ -17,7 +17,7 @@ df.rename(columns={
     "SourceFileName": "Nombre Archivo"
 }, inplace=True)
 
-df = df[df["Fecha"].notna()]  # eliminar basura
+df = df[df["Fecha"].notna()]
 
 # Extraer tipo de archivo desde la URL
 df["Tipo de Archivo"] = df["URL"].astype(str).str.extract(r"\.([a-zA-Z0-9]+)$", expand=False).str.lower()
@@ -29,7 +29,6 @@ df = df[df["Tipo de Archivo"].isin(tipos_validos)]
 # Cartel de auditoría
 st.warning("⚠️ Toda la actividad en este dashboard es monitoreada y registrada con fines de auditoría. Uso indebido puede ser sancionado. — Gerencia de Auditoría Externa de Sistemas")
 
-# Título
 st.title("📄 Dashboard de Accesos a Documentos (PDF, Word y Excel)")
 
 # Filtros interactivos
@@ -95,9 +94,9 @@ st.bar_chart(df_filtrado["Acción"].value_counts())
 st.subheader("📅 Accesos por día")
 st.line_chart(df_filtrado.groupby(df_filtrado["Fecha"].dt.date).size())
 
-# Tabla centrada en usuario y documento
+# Tabla centrada en accesos por usuario y archivo
 st.subheader("📋 Accesos por usuario y archivo")
-if not df_filtrado.empty:
+if not df_filtrado.empty and all(col in df_filtrado.columns for col in ["Usuario", "Fecha", "Acción", "Nombre Archivo"]):
     st.dataframe(df_filtrado[["Usuario", "Fecha", "Acción", "Nombre Archivo"]])
 else:
     st.info("No hay datos que coincidan con los filtros seleccionados.")
