@@ -23,13 +23,10 @@ df = df[df["Fecha"].notna()]
 df["Tipo de Archivo"] = df["URL"].astype(str).str.extract(r"\.([a-zA-Z0-9]+)$", expand=False).str.lower()
 df = df[df["Tipo de Archivo"].isin(["pdf", "doc", "docx", "xls", "xlsx"])]
 
-# Cartel
 st.warning("⚠️ Toda la actividad en este dashboard es monitoreada y registrada con fines de auditoría. Uso indebido puede ser sancionado. — Gerencia de Auditoría Externa de Sistemas")
 
-# Título
 st.title("📄 Dashboard de Accesos a Documentos (PDF, Word y Excel)")
 
-# Filtros
 usuarios = sorted(df["Usuario"].dropna().unique())
 acciones = sorted(df["Acción"].dropna().unique())
 tipos_archivo = sorted(df["Tipo de Archivo"].dropna().unique())
@@ -39,18 +36,24 @@ usuario_sel = col1.selectbox("👤 Usuario", ["Todos"] + usuarios)
 accion_sel = col2.selectbox("🧾 Acción", ["Todas"] + acciones)
 tipo_sel = col3.selectbox("📂 Tipo de archivo", ["Todos"] + tipos_archivo)
 
-# Combo + texto libre de archivo
+# Combo dinámico según texto parcial
 col_txt, col_combo = st.columns([2, 2])
 with col_txt:
     nombre_archivo_filtro = st.text_input("🔍 Buscar por nombre de archivo (parcial):")
-with col_combo:
-    if "Nombre Archivo" in df.columns:
-        lista_archivos = sorted(df["Nombre Archivo"].dropna().unique())
+
+# Llenar el combo en base al texto parcial
+if "Nombre Archivo" in df.columns:
+    if nombre_archivo_filtro:
+        archivos_filtrados = df[df["Nombre Archivo"].astype(str).str.contains(nombre_archivo_filtro, case=False, na=False)]
+        lista_archivos = sorted(archivos_filtrados["Nombre Archivo"].dropna().unique())
     else:
-        lista_archivos = []
+        lista_archivos = sorted(df["Nombre Archivo"].dropna().unique())
+else:
+    lista_archivos = []
+
+with col_combo:
     archivo_seleccionado = st.selectbox("📁 Elegí un archivo puntual:", ["Todos"] + lista_archivos)
 
-# Filtro por fechas
 fecha_min = df["Fecha"].min()
 fecha_max = df["Fecha"].max()
 fecha_sel = st.slider(
@@ -61,7 +64,6 @@ fecha_sel = st.slider(
     format="YYYY-MM-DD"
 )
 
-# Aplicar filtros
 df_filtrado = df.copy()
 if usuario_sel != "Todos":
     df_filtrado = df_filtrado[df_filtrado["Usuario"] == usuario_sel]
@@ -81,13 +83,11 @@ df_filtrado = df_filtrado[
     (df_filtrado["Fecha"].dt.date <= fecha_sel[1])
 ]
 
-# Métricas
 col4, col5, col6 = st.columns(3)
 col4.metric("Total de accesos", len(df_filtrado))
 col5.metric("Usuarios únicos", df_filtrado["Usuario"].nunique())
 col6.metric("Archivos únicos", df_filtrado["Nombre Archivo"].nunique() if "Nombre Archivo" in df_filtrado.columns else 0)
 
-# Gráficos
 st.subheader("📁 Accesos por tipo de archivo")
 st.bar_chart(df_filtrado["Tipo de Archivo"].value_counts())
 
@@ -100,15 +100,15 @@ st.bar_chart(df_filtrado["Acción"].value_counts())
 st.subheader("📅 Accesos por día")
 st.line_chart(df_filtrado.groupby(df_filtrado["Fecha"].dt.date).size())
 
-# Gráfico tipo torta
 st.subheader("🥧 Distribución por tipo de archivo")
 if not df_filtrado.empty and "Tipo de Archivo" in df_filtrado.columns:
     fig_pie = px.pie(df_filtrado, names="Tipo de Archivo", title="Distribución de accesos por tipo de archivo")
+    fig_pie.update_layout(hovermode="closest", dragmode=False)
+    fig_pie.layout.update({'uirevision': 'static', 'dragmode': False})
     st.plotly_chart(fig_pie)
 else:
     st.info("No hay datos para mostrar el gráfico de torta.")
 
-# Tabla
 st.subheader("📋 Accesos por usuario y archivo")
 if not df_filtrado.empty and all(col in df_filtrado.columns for col in ["Usuario", "Fecha", "Acción", "Nombre Archivo"]):
     st.dataframe(df_filtrado[["Usuario", "Fecha", "Acción", "Nombre Archivo"]])
