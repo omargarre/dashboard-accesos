@@ -29,9 +29,10 @@ df = df[df["Tipo de Archivo"].isin(tipos_validos)]
 # Cartel de auditoría
 st.warning("⚠️ Toda la actividad en este dashboard es monitoreada y registrada con fines de auditoría. Uso indebido puede ser sancionado. — Gerencia de Auditoría Externa de Sistemas")
 
-# Filtros interactivos
+# Título
 st.title("📄 Dashboard de Accesos a Documentos (PDF, Word y Excel)")
 
+# Filtros interactivos
 usuarios = sorted(df["Usuario"].dropna().unique())
 acciones = sorted(df["Acción"].dropna().unique())
 tipos_archivo = sorted(df["Tipo de Archivo"].dropna().unique())
@@ -76,7 +77,10 @@ df_filtrado = df_filtrado[
 col4, col5, col6 = st.columns(3)
 col4.metric("Total de accesos", len(df_filtrado))
 col5.metric("Usuarios únicos", df_filtrado["Usuario"].nunique())
-col6.metric("Archivos únicos", df_filtrado["Nombre Archivo"].nunique())
+col6.metric(
+    "Archivos únicos",
+    df_filtrado["Nombre Archivo"].nunique() if "Nombre Archivo" in df_filtrado.columns else 0
+)
 
 # Gráficos
 st.subheader("📁 Accesos por tipo de archivo")
@@ -91,6 +95,9 @@ st.bar_chart(df_filtrado["Acción"].value_counts())
 st.subheader("📅 Accesos por día")
 st.line_chart(df_filtrado.groupby(df_filtrado["Fecha"].dt.date).size())
 
-# Tabla enfocada en usuario ↔ archivo
+# Tabla centrada en usuario y documento
 st.subheader("📋 Accesos por usuario y archivo")
-st.dataframe(df_filtrado[["Usuario", "Fecha", "Acción", "Nombre Archivo"]])
+if not df_filtrado.empty:
+    st.dataframe(df_filtrado[["Usuario", "Fecha", "Acción", "Nombre Archivo"]])
+else:
+    st.info("No hay datos que coincidan con los filtros seleccionados.")
